@@ -29,7 +29,7 @@ The project monkey-sway is a clean, fast and vim-flavored Wayland desktop config
 | Per-window opacity          | sway has only static `opacity`, so the terminal 0.95 rule is dropped                                  |
 | Supress-maximize rule       | not needed on sway                                                                                    |
 | 3-finger touchpad swipe     | skipped (sway ≥ 1.10 _does_ support `bindgesture swipe:left workspace next`, add it back if you want) |
-| `Super+Shift+hjkl` resize   | `resize shrink                                                                                        | grow width | height 20px`, plus a dedicated `Super+r` resize mode |
+| `Super+Shift+hjkl` resize   | `resize shrink \| grow width \| height 20px`, plus a dedicated `Super+r` resize mode                  |
 | `Super+Shift+e` exit        | `swaynag` confirmation dialog before `swaymsg exit`                                                   |
 | hyprlock / hypridle         | swaylock (sonokai colors) + swayidle (auto-lock after 5 min, dpms off)                                |
 | xdg-desktop-portal-hyprland | xdg-desktop-portal-wlr                                                                                |
