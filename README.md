@@ -46,6 +46,8 @@ The project monkey-sway is a clean, fast and vim-flavored Wayland desktop config
 
 ### 1. Install dependencies
 
+`install.sh` and `checkhealth.sh --install` install these automatically (apt/zypper/dnf/pacman). The table below documents what gets checked and why:
+
 | Tool                                        | Purpose                                                       | Required |
 | ------------------------------------------- | ------------------------------------------------------------- | -------- |
 | sway                                        | The compositor (ships swaymsg / swaybar / swaynag)            | Yes      |
@@ -109,10 +111,30 @@ comment block at the top of `config`. Two ways to apply them:
 
 ### 3. Install monkey-sway
 
+One-liner (installs deps, clones this repo and links the configs):
+
 ```bash
+curl -fsSL https://raw.githubusercontent.com/QMonkey/monkey-sway/master/install.sh | bash
+```
+
+The installer also writes a **guarded tty1 autostart block** to your shell rc (`~/.zshrc` / `~/.bashrc`) when the machine has no graphical session, no display manager and no other desktop running:
+
+```bash
+# monkey-sway autostart (remove these lines to disable)
+if [ -z "$WAYLAND_DISPLAY" ] && [ "$XDG_VTNR" = 1 ]; then
+    exec sway
+fi
+```
+
+> If the install was chained from an outer meta-installer, its terminal-activation step may `source` your rc file right after the install — on a tty1 bash machine (where `.bash_profile` sources `.bashrc`) this can start the compositor immediately.
+
+Prefer manual setup? Clone and link:
+
+```bash
+git clone https://github.com/QMonkey/monkey-sway.git
 cd monkey-sway
-ln -sf $(pwd)/config ~/.config/sway/config
-ln -sf $(pwd)/waybar ~/.config/waybar
+ln -sfn $(pwd)/config ~/.config/sway/config
+ln -sfn $(pwd)/waybar ~/.config/waybar
 ```
 
 Then start (or restart) sway. waybar, mako, the polkit agent and nm-applet are
@@ -126,6 +148,8 @@ Log in on a TTY, make sure you are not root, and run `sway`. Never run it under
 `sudo`/`root`. If the session ends (Super+Shift+e) you are dropped back to the TTY.
 
 #### Auto-start on boot
+
+`install.sh` writes the block below for you when it detects a bare-TTY machine (no graphical session, no display manager, no other desktop). To add it manually:
 
 Add the following to your shell rc (`~/.zshrc` or `~/.bashrc`):
 
@@ -261,4 +285,3 @@ modules-right:   tray, network, pulseaudio, battery
 - **Path differences** — `polkit-gnome-authentication-agent-1` and the `xdg-desktop-portal-*`
   backends are assumed under `/usr/lib` (Arch). On Fedora/Debian they live in `/usr/libexec`;
   adjust the `exec_always` lines in `config` if the autostart doesn't fire
-
