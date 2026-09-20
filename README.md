@@ -9,7 +9,7 @@ The project monkey-sway is a clean, fast and vim-flavored Wayland desktop config
 | Feature             | Description                                                                                        |
 | ------------------- | -------------------------------------------------------------------------------------------------- |
 | Single config file  | Entire compositor config (look, input, autostart, keybindings, window rules) lives in one `config` |
-| Sonokai theme       | Colors matched to the sonokai dark scheme (same palette as monkey-vim)                             |
+| Sonokai theme       | Colors matched to the sonokai dark scheme                                                          |
 | Vim-style bindings  | Focus / move / resize windows with `Super + Ctrl/Shift + h/j/k/l`                                  |
 | Auto monitor detect | Monitors are auto-detected at their highest refresh rate; solid-color wallpaper                    |
 | Laptop aware        | Touchpad natural scrolling and brightness keys work automatically on battery machines              |
@@ -147,6 +147,31 @@ launched automatically on startup.
 Log in on a TTY, make sure you are not root, and run `sway`. Never run it under
 `sudo`/`root`. If the session ends (Super+Shift+e) you are dropped back to the TTY.
 
+#### Alongside an existing desktop (display manager)
+
+If another desktop environment is already installed (started by GDM, SDDM, etc.), there are two ways to get into sway:
+
+**Via the display manager** — log out to the login screen and pick sway from the session menu. sway ships its own desktop entry in `/usr/share/wayland-sessions/`; if it is missing, create it:
+
+```ini
+# /usr/share/wayland-sessions/sway.desktop
+[Desktop Entry]
+Name=Sway
+Comment=i3-compatible Wayland compositor
+Exec=sway
+Type=Application
+```
+
+**From a TTY** (recommended when the DM handles non-default sessions poorly) — log out (the DM returns to its greeter on its own VT), switch to a free virtual console (`Ctrl+Alt+F2`~`F6`), log in and launch sway directly:
+
+```bash
+sway
+```
+
+No need to stop the display manager: logind hands the seat (DRM master + input devices) to whichever VT session is active, and the parked greeter is harmless. Optionally stop it first (`sudo systemctl stop display-manager`) to free its resources; this is a per-boot change and the DM comes back on reboot (`sudo systemctl disable display-manager.service` makes TTY launch permanent).
+
+> Stopping the DM terminates every session it manages — save unsaved work first. Also avoid running two compositors side by side on the same seat; concurrent sessions fight over the GPU and input devices. Log out before starting sway from a TTY.
+
 #### Auto-start on boot
 
 `install.sh` writes the block below for you when it detects a bare-TTY machine (no graphical session, no display manager, no other desktop). To add it manually:
@@ -159,6 +184,39 @@ if [ -z "$WAYLAND_DISPLAY" ] && [ "$XDG_VTNR" = 1 ]; then
     exec sway
 fi
 ```
+
+#### Starting sway from inside tmux
+
+If tmux auto-starts on shell login (e.g. from your shell rc), you may land in
+tmux first on a bare TTY — and if you then start sway (manually or via the
+auto-start block above), the compositor runs inside a tmux pane with the tmux
+server as its ancestor. Restarting the tmux server (`tmux kill-server`, config
+upgrades, etc.) tears down every pane process with it, taking the desktop down
+with the session.
+
+Whether sway survives a server restart depends on how it was launched
+(verified empirically):
+
+| Launch command  | Survives `tmux kill-server`?                                 |
+| --------------- | ------------------------------------------------------------ |
+| `sway`          | No                                                           |
+| `sway &`        | No — the pane shell forwards SIGHUP to its jobs when it dies |
+| `nohup sway &`  | Yes                                                          |
+| `setsid sway &` | Yes (recommended)                                            |
+
+- `nohup ... &` makes the process ignore SIGHUP; output is redirected to
+  `nohup.out`.
+- `setsid ... &` is the most robust: the process moves into a brand-new
+  session with no controlling terminal at all, so no HUP can ever reach it.
+
+`setsid sway &` keeps the officially recommended "run it directly" semantics
+intact — logind still hands over the seat; only HUP immunity is added. Two
+things to know:
+
+- The desktop inherits the environment of the tmux pane it was started from.
+- Exiting sway (Super+Shift+e) drops you back into the tmux pane's shell
+  prompt rather than the login prompt, because the `exec` in the auto-start
+  block no longer applies.
 
 ### 5. Update project
 
