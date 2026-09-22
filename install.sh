@@ -414,7 +414,7 @@ main() {
 
 	echo -e "${GREEN}${BOLD}monkey-sway installation complete!${NC}"
 	echo ""
-	echo -e "  Config: ${CYAN}$INSTALL_DIR${NC} → ${CYAN}~/.config/sway + ~/.config/waybar${NC}"
+	echo -e "  Config: ${CYAN}$INSTALL_DIR${NC} → ${CYAN}~/.config/sway (+pictures) + ~/.config/waybar${NC}"
 	echo -e "  Start sway from a TTY (never under sudo/root): ${CYAN}sway${NC}"
 	if [ -n "$AUTOSTART_FILES" ]; then
 		echo -e "  Autostart: a VT login execs ${CYAN}sway${NC} unless sway is already running (block in:${CYAN}$AUTOSTART_FILES${NC})"
