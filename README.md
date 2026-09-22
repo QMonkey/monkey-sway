@@ -117,16 +117,23 @@ One-liner (installs deps, clones this repo and links the configs):
 curl -fsSL https://raw.githubusercontent.com/QMonkey/monkey-sway/master/install.sh | bash
 ```
 
-The installer also writes a **guarded tty1 autostart block** to your shell rc (`~/.zshrc` / `~/.bashrc`) when the machine has no graphical session, no display manager and no other desktop running:
+The installer also writes a **guarded autostart block** to your shell profile files (`~/.zprofile` for zsh; `~/.bash_profile` or `~/.profile` plus `~/.bashrc` for bash):
 
 ```bash
 # monkey-sway autostart (remove these lines to disable)
-if [ -z "$WAYLAND_DISPLAY" ] && [ "$XDG_VTNR" = 1 ]; then
-    exec sway
+# Keep this block ABOVE any "exec tmux" auto-start block: on a bare TTY
+# exec replaces the login shell with the compositor, so the tmux
+# auto-start line is never reached and the desktop never runs inside a
+# tmux pane. Inside a desktop terminal the env guards short-circuit and
+# the tmux auto-start runs normally.
+if [ -z "${WAYLAND_DISPLAY:-}" ] && [ -z "${DISPLAY:-}" ]; then
+    case "$(tty 2>/dev/null)" in
+    /dev/tty[0-9]*) pgrep -x sway >/dev/null 2>&1 || exec sway ;;
+    esac
 fi
 ```
 
-> If the install was chained from an outer meta-installer, its terminal-activation step may `source` your rc file right after the install — on a tty1 bash machine (where `.bash_profile` sources `.bashrc`) this can start the compositor immediately.
+> If the install was chained from an outer meta-installer, its terminal-activation step may `source` your rc file right after the install — on a bare-TTY bash machine (where `.bash_profile` sources `.bashrc`) this can start the compositor immediately.
 
 Prefer manual setup? Clone and link:
 
@@ -170,22 +177,51 @@ sway
 
 No need to stop the display manager: logind hands the seat (DRM master + input devices) to whichever VT session is active, and the parked greeter is harmless. Optionally stop it first (`sudo systemctl stop display-manager`) to free its resources; this is a per-boot change and the DM comes back on reboot (`sudo systemctl disable display-manager.service` makes TTY launch permanent).
 
-> Stopping the DM terminates every session it manages — save unsaved work first. Also avoid running two compositors side by side on the same seat; concurrent sessions fight over the GPU and input devices. Log out before starting sway from a TTY.
+> Stopping the DM terminates every session it manages — save unsaved work first.
+
+**Multiple desktops coexist by design.** logind arbitrates the seat per session (fast-user-switching), so an X11 desktop from the DM, sway, and Hyprland can all live on different VTs at once — switch between them with Ctrl+Alt+FN. Trade-offs worth knowing:
+
+- Clipboards do not cross session boundaries — each graphical session owns its selections.
+- Both sessions pay memory/GPU while alive.
+- NVIDIA proprietary drivers remain the fragile exception for VT switching; AMD/Intel are unaffected.
+- Duplicate instances of the _same_ compositor are still blocked: the autostart guard's `pgrep -x sway` enforces a single sway. Once it is running, tty logins on other VTs fall through to a plain console shell — your escape hatch instead of a second compositor.
 
 #### Auto-start on boot
 
-`install.sh` writes the block below for you when it detects a bare-TTY machine (no graphical session, no display manager, no other desktop). To add it manually:
+`install.sh` writes the block below into your shell profile files (see §3 for the exact file set). To add it manually:
 
-Add the following to your shell rc (`~/.zshrc` or `~/.bashrc`):
+Add the following to the profile (`~/.zprofile` for zsh, `~/.bash_profile`/`~/.profile` + `~/.bashrc` for bash):
 
 ```bash
-# Start sway on tty1 login only, and only outside of an existing session
-if [ -z "$WAYLAND_DISPLAY" ] && [ "$XDG_VTNR" = 1 ]; then
-    exec sway
+# monkey-sway autostart (remove these lines to disable)
+# Keep this block ABOVE any "exec tmux" auto-start block: on a bare TTY
+# exec replaces the login shell with the compositor, so the tmux
+# auto-start line is never reached and the desktop never runs inside a
+# tmux pane. Inside a desktop terminal the env guards short-circuit and
+# the tmux auto-start runs normally.
+if [ -z "${WAYLAND_DISPLAY:-}" ] && [ -z "${DISPLAY:-}" ]; then
+    case "$(tty 2>/dev/null)" in
+    /dev/tty[0-9]*) pgrep -x sway >/dev/null 2>&1 || exec sway ;;
+    esac
 fi
 ```
 
+- Guards run cheapest-first: inside a desktop terminal or tmux pane the `$WAYLAND_DISPLAY`/`$DISPLAY` check short-circuits with zero forks; `tty` then excludes ssh (`/dev/pts/N`), tmux panes and desktop terminals in one check — immune to inherited environment (unlike `XDG_VTNR`, which a TTY-started tmux server passes down to its panes); `pgrep` enforces the single-instance policy last.
+- Once sway runs, tty logins on other VTs give a plain console shell — the escape hatch. Before that, logging in on any VT starts it.
+- `exec` replaces the shell, so logging out of sway returns to the login prompt.
+
+##### Ordering: this block MUST run before any `exec tmux` auto-start block
+
+An `exec tmux` auto-start block may live in the same profile files. `exec` replaces the shell process and the matching guard wins, so the relative order decides who owns a bare TTY:
+
+- **Compositor first (correct)**: a TTY login exec's straight into sway — the `exec tmux` line is never reached, the desktop never lives inside a tmux pane, and a tmux server restart (`tmux kill-server`, config upgrades) can never take the session down. Inside the desktop, each terminal spawns a fresh shell: the env guards short-circuit the compositor block, and `exec tmux` starts the server with the desktop environment as its baseline — new tmux panes inherit `WAYLAND_DISPLAY`/`XDG_CURRENT_DESKTOP`, so `wl-clipboard`, portals and desktop detection all work.
+- **tmux first (not so good)**: this case mainly applies to machines that do not auto-start a desktop environment — sway is launched manually on demand from a TTY. There a TTY login lands in tmux instead; the server's baseline environment is the TTY's, so panes opened later from the desktop lack `WAYLAND_DISPLAY` (wl-clipboard etc. break), and starting the compositor from a pane couples the graphical session to the tmux server — see the next section. On machines where the auto-start block above is in place, a TTY login exec's straight into the compositor and never reaches the tmux block, so this ordering issue does not arise.
+
+The block only needs to end up above the tmux auto-start block. When installed via the meta-installer, the compositor is installed before tmux, so the appended blocks naturally land in the right order. For manual setups, paste the compositor block above the tmux block in the same file.
+
 #### Starting sway from inside tmux
+
+With the ordering rule above in place, a TTY login never reaches tmux — the scenarios below only apply when you deliberately start the compositor from inside a tmux pane (e.g. a TTY where you attached manually).
 
 If tmux auto-starts on shell login (e.g. from your shell rc), you may land in
 tmux first on a bare TTY — and if you then start sway (manually or via the
