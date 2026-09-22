@@ -49,14 +49,17 @@ set $lock swaylock --color 2c2e34 --ring-color 363944 --inside-color 2c2e34 \
 # -----------------------------------------------------------------------------
 font pango:JetBrains Mono 12
 
-# Wallpaper: solid sonokai bg0 (sway spawns swaybg automatically)
-output * bg #2c2e34 solid_color
+# Wallpaper: same picture as monkey-hyprland (sway spawns swaybg
+# automatically). "fill" scales and crops to cover each output.
+# The pictures/ directory is symlinked to ~/.config/sway by install.sh,
+# so the path below works regardless of where the repo is cloned.
+output * bg ~/.config/sway/pictures/oskar-kadaksoo-ZqJ7zs0iT7w-unsplash.jpg fill
 
 # Borders / gaps
 default_border pixel 2
 default_floating_border pixel 2
-gaps inner 3
-gaps outer 6
+gaps inner 0
+gaps outer 0
 
 # Border & title colors (border, background, text, indicator, child_border)
 client.focused            #76cce0 #33353f #e2e2e3 #b39df3 #76cce0
