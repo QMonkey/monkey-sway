@@ -133,7 +133,10 @@ os_detect() {
 			# shellcheck disable=SC1091
 			. /etc/os-release
 			case "$ID" in
-			ubuntu | debian | linuxmint | pop | elementary | zorin) echo "debian" ;;
+			# Ubuntu and its derivatives get their own class: package names
+			# can differ from Debian's and coverage varies per release.
+			ubuntu | linuxmint | pop | elementary | zorin) echo "ubuntu" ;;
+			debian) echo "debian" ;;
 			arch | manjaro | endeavouros) echo "arch" ;;
 			opensuse | opensuse-leap | opensuse-tumbleweed | opensuse-microos | suse | sles) echo "opensuse" ;;
 			centos | rhel | fedora | rocky | almalinux | ol) echo "centos" ;;
@@ -160,7 +163,7 @@ refresh_pkg() {
 	local attempt
 	for attempt in 1 2; do
 		case "$OS" in
-		debian) sudo_cmd apt-get update ;;
+		debian | ubuntu) sudo_cmd apt-get update ;;
 		arch) sudo_cmd pacman -Sy ;;
 		opensuse) sudo_cmd zypper --non-interactive refresh ;;
 		centos) sudo_cmd dnf makecache -q ;;
@@ -176,7 +179,7 @@ install_pkg() {
 	refresh_pkg
 	local _rc=0
 	case "$OS" in
-	debian) sudo_cmd apt-get install -y "$@" || _rc=1 ;;
+	debian | ubuntu) sudo_cmd apt-get install -y "$@" || _rc=1 ;;
 	arch) sudo_cmd pacman -S --noconfirm "$@" || _rc=1 ;;
 	opensuse) sudo_cmd zypper --non-interactive install -y "$@" || _rc=1 ;;
 	centos)
@@ -195,7 +198,7 @@ install_pkg() {
 
 get_install_hint() {
 	case "$OS" in
-	debian) echo "sudo apt-get install ${*}" ;;
+	debian | ubuntu) echo "sudo apt-get install ${*}" ;;
 	opensuse) echo "sudo zypper install ${*}" ;;
 	centos) echo "sudo dnf install ${*}" ;;
 	arch) echo "sudo pacman -S ${*}" ;;
@@ -250,7 +253,16 @@ pkg_name() {
 	debian:wl-copy) echo "wl-clipboard" ;;
 	debian:wpctl) echo "wireplumber" ;;
 	debian:nm-applet) echo "network-manager-gnome" ;;
-	debian:polkit-gnome-authentication-agent-1) echo "polkit-gnome" ;;
+	debian:mako) echo "mako-notifier" ;;
+	debian:polkit-gnome-authentication-agent-1) echo "policykit-1-gnome" ;;
+	# Ubuntu / apt: same package names as Debian
+	ubuntu:swaymsg) echo "sway" ;;
+	ubuntu:swaynag) echo "sway" ;;
+	ubuntu:wl-copy) echo "wl-clipboard" ;;
+	ubuntu:wpctl) echo "wireplumber" ;;
+	ubuntu:nm-applet) echo "network-manager-gnome" ;;
+	ubuntu:mako) echo "mako-notifier" ;;
+	ubuntu:polkit-gnome-authentication-agent-1) echo "policykit-1-gnome" ;;
 	# openSUSE / zypper
 	opensuse:swaymsg) echo "sway" ;;
 	opensuse:swaynag) echo "sway" ;;
@@ -258,10 +270,11 @@ pkg_name() {
 	opensuse:wpctl) echo "wireplumber" ;;
 	opensuse:nm-applet) echo "NetworkManager-applet" ;;
 	opensuse:polkit-gnome-authentication-agent-1) echo "polkit-gnome-authentication-agent-1" ;;
-	# CentOS-family / dnf
+	# CentOS-family / dnf: nm-applet ships in the nm-connection-editor
+	# package on Fedora; "NetworkManager-applet" is not a real binary name
 	centos:wl-copy) echo "wl-clipboard" ;;
 	centos:wpctl) echo "wireplumber" ;;
-	centos:nm-applet) echo "NetworkManager-applet" ;;
+	centos:nm-applet) echo "nm-connection-editor" ;;
 	# Arch / pacman (official binary names match; wezterm ships in extra)
 	arch:wezterm) echo "wezterm" ;;
 	*)
@@ -281,7 +294,7 @@ print_platform() {
 	echo -e "${BOLD}Platform${NC}"
 	echo -e "  OS: ${CYAN}$(uname -s)${NC}"
 	case "$OS" in
-	debian) echo -e "  Package manager: ${CYAN}apt${NC}" ;;
+	debian | ubuntu) echo -e "  Package manager: ${CYAN}apt${NC}" ;;
 	opensuse) echo -e "  Package manager: ${CYAN}zypper${NC}" ;;
 	centos) echo -e "  Package manager: ${CYAN}dnf${NC}" ;;
 	arch) echo -e "  Package manager: ${CYAN}pacman${NC}" ;;
