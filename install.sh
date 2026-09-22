@@ -370,6 +370,7 @@ setup_symlinks() {
 	info "Setting up configuration symlinks..."
 	mkdir -p "$HOME/.config/sway"
 	link_config "$INSTALL_DIR/config" "$HOME/.config/sway/config"
+	link_config "$INSTALL_DIR/pictures" "$HOME/.config/sway/pictures"
 	link_config "$INSTALL_DIR/waybar" "$HOME/.config/waybar"
 }
 
