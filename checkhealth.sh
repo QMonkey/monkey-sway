@@ -107,6 +107,7 @@ check_bin_ext() {
 		if have_native_cmd "$b" ||
 			[[ -x "/usr/lib/$b" ]] ||
 			[[ -x "/usr/libexec/$b" ]] ||
+			[[ -x "/usr/lib/policykit-1-gnome/$b" ]] ||
 			[[ -x "/usr/lib/polkit-gnome/$b" ]]; then
 			echo -e "  ${PASS} $label ($b)"
 			return 0
@@ -120,7 +121,7 @@ check_bin_ext() {
 bin_req_ok() {
 	local b="$1"
 	if have_native_cmd "$b"; then return 0; fi
-	for p in "/usr/lib/$b" "/usr/libexec/$b" "/usr/lib/polkit-gnome/$b"; do
+	for p in "/usr/lib/$b" "/usr/libexec/$b" "/usr/lib/policykit-1-gnome/$b" "/usr/lib/polkit-gnome/$b"; do
 		[[ -x "$p" ]] && return 0
 	done
 	return 1
