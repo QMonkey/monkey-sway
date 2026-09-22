@@ -11,7 +11,7 @@ The project monkey-sway is a clean, fast and vim-flavored Wayland desktop config
 | Single config file  | Entire compositor config (look, input, autostart, keybindings, window rules) lives in one `config` |
 | Sonokai theme       | Colors matched to the sonokai dark scheme                                                          |
 | Vim-style bindings  | Focus / move / resize windows with `Super + Ctrl/Shift + h/j/k/l`                                  |
-| Auto monitor detect | Monitors are auto-detected at their highest refresh rate; solid-color wallpaper                    |
+| Auto monitor detect | Monitors are auto-detected at their highest refresh rate; picture wallpaper via swaybg             |
 | Laptop aware        | Touchpad natural scrolling and brightness keys work automatically on battery machines              |
 | No animations       | Animations/blur/rounding are not configurable on sway by design; performance-first                 |
 | waybar status bar   | Paired waybar config (workspaces, clock, tray, network, audio, battery)                            |
@@ -34,7 +34,7 @@ The project monkey-sway is a clean, fast and vim-flavored Wayland desktop config
 | hyprlock / hypridle         | swaylock (sonokai colors) + swayidle (auto-lock after 5 min, dpms off)                                |
 | xdg-desktop-portal-hyprland | xdg-desktop-portal-wlr                                                                                |
 | hyprpolkitagent             | polkit-gnome-authentication-agent-1                                                                   |
-| hyprpaper                   | `output * bg` solid sonokai color (swaybg auto-spawned)                                               |
+| hyprpaper                   | `output * bg` wallpaper image (swaybg auto-spawned)                                                   |
 
 ## Requirements
 
@@ -140,12 +140,15 @@ Prefer manual setup? Clone and link:
 ```bash
 git clone https://github.com/QMonkey/monkey-sway.git
 cd monkey-sway
+mkdir -p ~/.config/sway
 ln -sfn $(pwd)/config ~/.config/sway/config
+ln -sfn $(pwd)/pictures ~/.config/sway/pictures
 ln -sfn $(pwd)/waybar ~/.config/waybar
 ```
 
 Then start (or restart) sway. waybar, mako, the polkit agent and nm-applet are
-launched automatically on startup.
+launched automatically on startup. The `pictures` link is required — the
+wallpaper in the config is referenced as `~/.config/sway/pictures/...`.
 
 ### 4. Start sway
 
