@@ -109,15 +109,15 @@ install_pkg() {
 	refresh_pkg
 	local rc=0
 	case "$OS" in
-	debian | ubuntu) retry -s "apt-get install" sudo_cmd apt-get install -y "$@" ;;
-	arch) retry -s "pacman install" sudo_cmd pacman -S --needed --noconfirm "$@" ;;
-	opensuse) retry -s "zypper install" sudo_cmd zypper --non-interactive install -y "$@" ;;
+	debian | ubuntu) retry -t 1800 -s "apt-get install" sudo_cmd apt-get install -y "$@" ;;
+	arch) retry -t 1800 -s "pacman install" sudo_cmd pacman -S --needed --noconfirm "$@" ;;
+	opensuse) retry -t 1800 -s "zypper install" sudo_cmd zypper --non-interactive install -y "$@" ;;
 	centos)
 		sudo_cmd dnf install -y epel-release || true
-		retry -s "dnf install" sudo_cmd dnf install -y "$@"
+		retry -t 1800 -s "dnf install" sudo_cmd dnf install -y "$@"
 		;;
 	fedora)
-		retry -s "dnf install" sudo_cmd dnf install -y "$@"
+		retry -t 1800 -s "dnf install" sudo_cmd dnf install -y "$@"
 		;;
 	*) rc=1 ;;
 	esac || rc=$?
