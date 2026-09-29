@@ -64,7 +64,24 @@ if [ ! -f "$_monkey_scripts/install.sh" ]; then
 			echo "  move it aside, delete it, or set INSTALL_DIR elsewhere." >&2
 			exit 1
 		else
-			git clone "$PROJECT_REPO" "$INSTALL_DIR" || exit 1
+			# No retry() available yet — the framework loads only after this
+		# clone succeeds — so inline the standard 3 attempts. A failed clone
+		# leaves a partial directory behind; remove it so the next attempt
+		# cannot trip over "already exists". This branch only runs on a
+		# fresh install (INSTALL_DIR did not exist or was empty), so the rm
+		# can never delete pre-existing data.
+		_monkey_rc=1
+		for _monkey_attempt in 1 2 3; do
+			if git clone "$PROJECT_REPO" "$INSTALL_DIR"; then
+				_monkey_rc=0
+				break
+			fi
+			rm -rf "$INSTALL_DIR"
+			if [ "$_monkey_attempt" -lt 3 ]; then
+				sleep 2
+			fi
+		done
+		[ "$_monkey_rc" -eq 0 ] || exit 1
 		fi
 		# </dev/null: on the curl|bash path stdin is the script pipe, and the
 		# inner installer must not read what is left of the outer one.
@@ -92,15 +109,15 @@ install_pkg() {
 	refresh_pkg
 	local rc=0
 	case "$OS" in
-	debian | ubuntu) sudo_cmd apt-get install -y "$@" ;;
-	arch) sudo_cmd pacman -S --needed --noconfirm "$@" ;;
-	opensuse) sudo_cmd zypper --non-interactive install -y "$@" ;;
+	debian | ubuntu) retry -s "apt-get install" sudo_cmd apt-get install -y "$@" ;;
+	arch) retry -s "pacman install" sudo_cmd pacman -S --needed --noconfirm "$@" ;;
+	opensuse) retry -s "zypper install" sudo_cmd zypper --non-interactive install -y "$@" ;;
 	centos)
 		sudo_cmd dnf install -y epel-release || true
-		sudo_cmd dnf install -y "$@"
+		retry -s "dnf install" sudo_cmd dnf install -y "$@"
 		;;
 	fedora)
-		sudo_cmd dnf install -y "$@"
+		retry -s "dnf install" sudo_cmd dnf install -y "$@"
 		;;
 	*) rc=1 ;;
 	esac || rc=$?
