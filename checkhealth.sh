@@ -124,7 +124,14 @@ pkg_name() {
 	fedora:wpctl) echo "wireplumber" ;;
 	fedora:nm-applet) echo "nm-connection-editor" ;;
 	# Arch / pacman (official binary names match; wezterm ships in extra)
+	arch:swaymsg | arch:swaynag) echo "sway" ;;
+	arch:wl-copy) echo "wl-clipboard" ;;
+	arch:wpctl) echo "wireplumber" ;;
+	arch:nm-applet) echo "network-manager-applet" ;;
+	arch:polkit-gnome-authentication-agent-1) echo "polkit-gnome" ;;
 	arch:wezterm) echo "wezterm" ;;
+	# Fedora / dnf: the agent binary ships in the polkit-gnome package
+	fedora:polkit-gnome-authentication-agent-1) echo "polkit-gnome" ;;
 	*)
 		default_pkg_name "$1"
 		;;
