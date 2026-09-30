@@ -268,6 +268,37 @@ git pull
 
 Reload with `swaymsg reload` (or restart sway) and restart waybar for bar changes.
 
+### Optional: kmscon console (fallback tty)
+
+Pass `--with-kmscon [tty[,tty...]]` to hand the listed VTs to
+[kmscon](https://github.com/Aetf/kmscon) instead of a bare getty: the installer
+enables `kmscon@ttyN` on each listed VT and masks the matching `getty@ttyN`
+instances. A bare getty is deliberately kept on every **other** VT — the fbcon
+console is the last resort when the whole KMS/DRM stack breaks, so the
+replacement set is exactly the list you pass. Inside a kmscon session the
+autostart block wraps the compositor in `kmscon-launch-gui` (shipped by the
+distro kmscon package): the wrapper backgrounds the kmscon terminal so the
+compositor can take DRM master on the same VT, and restores kmscon when the
+compositor exits.
+
+The default is `tty2`:
+
+```bash
+bash install.sh --with-kmscon            # tty2
+bash install.sh --with-kmscon tty1       # primary login VT (no display manager)
+bash install.sh --with-kmscon tty1,tty2
+```
+
+On the `curl | bash` path, pass the flag after `bash -s --`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/QMonkey/monkey-sway/master/install.sh | bash -s -- --with-kmscon
+```
+
+> **Warning:** pass `tty1` only when no display manager owns it — a DM's
+> greeter and kmscon would fight over the same VT. The installer prints an
+> advisory warning when it detects an enabled display manager.
+
 ## `scripts/` (shared framework)
 
 The `scripts/` directory is a [git subtree](https://git-scm.com/docs/git-subtree)
