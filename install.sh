@@ -149,6 +149,14 @@ install_step_prepare() {
 # The compositor autostart line of the summary depends on what
 # write_tty_autostart did — slot it in before "Update:".
 install_step_autostart() {
+	if [ -n "$KMSCON_TTYS" ]; then
+		if is_wsl; then
+			warn "WSL detected — skipping kmscon setup (no VT login)."
+		else
+			ensure_kmscon "$KMSCON_TTYS" || warn "kmscon setup failed — continuing without it."
+			KMSCON_DONE=1
+		fi
+	fi
 	write_tty_autostart sway sway
 	echo ""
 	if [ -n "$AUTOSTART_FILES" ]; then
@@ -157,6 +165,13 @@ install_step_autostart() {
 			"${SUMMARY_LINES[1]}"
 			"  Autostart: a VT login execs ${CYAN}sway${NC} unless sway is already running (block in:${CYAN}$AUTOSTART_FILES${NC})"
 			"${SUMMARY_LINES[2]}"
+		)
+	fi
+	if [ -n "$KMSCON_DONE" ]; then
+		SUMMARY_LINES=(
+			"${SUMMARY_LINES[@]:0:${#SUMMARY_LINES[@]}-1}"
+			"  kmscon: fallback console on ${CYAN}${KMSCON_TTYS}${NC} — switch with chvt N"
+			"${SUMMARY_LINES[-1]}"
 		)
 	fi
 }
@@ -187,4 +202,31 @@ setup_symlinks() {
 	link_config "$INSTALL_DIR/waybar" "$HOME/.config/waybar"
 }
 
-install_main "$@"
+# ──────────────────────── optional kmscon takeover ────────────────────────
+# --with-kmscon [tty[,tty...]] hands the listed VTs to kmscon (default
+# tty2) and masks the matching getty instances — ensure_kmscon in
+# scripts/lib/kmscon.sh does the work. The flag stays local to this
+# installer: it is parsed out here and never reaches install_main. The
+# parser runs in the current shell (a subshell would drop KMSCON_TTYS):
+# it fills _INSTALL_ARGS directly instead of printing through a pipe.
+parse_install_args() {
+	KMSCON_TTYS=""
+	KMSCON_DONE=""
+	_INSTALL_ARGS=()
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		--with-kmscon)
+			KMSCON_TTYS=tty2
+			if [[ $# -gt 1 && "$2" != --* ]]; then
+				KMSCON_TTYS=$2
+				shift
+			fi
+			;;
+		*) _INSTALL_ARGS+=("$1") ;;
+		esac
+		shift
+	done
+}
+
+parse_install_args "$@"
+install_main "${_INSTALL_ARGS[@]+"${_INSTALL_ARGS[@]}"}"
