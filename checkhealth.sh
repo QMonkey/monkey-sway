@@ -85,91 +85,17 @@ bin_req_ok() {
 	return 1
 }
 
-# Package name for a binary on the detected OS. Only entries that differ
-# from the binary name need a case arm; everything else falls through.
-# Keyed by OS (one id per distro; Ubuntu and Fedora key their own
-# rows — the names happen to match their siblings today).
-pkg_name() {
-	case "${OS}:$1" in
-	# Debian / apt
-	debian:swaymsg | debian:swaynag) echo "sway" ;;
-	debian:wl-copy) echo "wl-clipboard" ;;
-	debian:wpctl) echo "wireplumber" ;;
-	debian:nm-applet) echo "network-manager-gnome" ;;
-	debian:mako) echo "mako-notifier" ;;
-	debian:polkit-gnome-authentication-agent-1) echo "policykit-1-gnome" ;;
-	# Ubuntu / apt (same names as Debian)
-	ubuntu:swaymsg | ubuntu:swaynag) echo "sway" ;;
-	ubuntu:wl-copy) echo "wl-clipboard" ;;
-	ubuntu:wpctl) echo "wireplumber" ;;
-	ubuntu:nm-applet) echo "network-manager-gnome" ;;
-	ubuntu:mako) echo "mako-notifier" ;;
-	ubuntu:polkit-gnome-authentication-agent-1) echo "policykit-1-gnome" ;;
-	# openSUSE / zypper
-	opensuse:swaymsg | opensuse:swaynag) echo "sway" ;;
-	opensuse:wl-copy) echo "wl-clipboard" ;;
-	opensuse:wpctl) echo "wireplumber" ;;
-	opensuse:nm-applet) echo "NetworkManager-applet" ;;
-	opensuse:polkit-gnome-authentication-agent-1) echo "polkit-gnome-authentication-agent-1" ;;
-	# centos/fedora (dnf): nm-applet ships in the nm-connection-editor
-	# package on Fedora; "NetworkManager-applet" is not a real binary name
-	# swaymsg/swaynag ship in the sway package on every dnf distro
-	centos:swaymsg | centos:swaynag) echo "sway" ;;
-	centos:wl-copy) echo "wl-clipboard" ;;
-	centos:wpctl) echo "wireplumber" ;;
-	centos:nm-applet) echo "nm-connection-editor" ;;
-	# Fedora / dnf (same names as CentOS, no EPEL)
-	fedora:swaymsg | fedora:swaynag) echo "sway" ;;
-	fedora:wl-copy) echo "wl-clipboard" ;;
-	fedora:wpctl) echo "wireplumber" ;;
-	fedora:nm-applet) echo "nm-connection-editor" ;;
-	# Arch / pacman (official binary names match; wezterm ships in extra)
-	arch:swaymsg | arch:swaynag) echo "sway" ;;
-	arch:wl-copy) echo "wl-clipboard" ;;
-	arch:wpctl) echo "wireplumber" ;;
-	arch:nm-applet) echo "network-manager-applet" ;;
-	arch:polkit-gnome-authentication-agent-1) echo "polkit-gnome" ;;
-	arch:wezterm) echo "wezterm" ;;
-	# Fedora / dnf: the agent binary ships in the polkit-gnome package
-	fedora:polkit-gnome-authentication-agent-1) echo "polkit-gnome" ;;
-	*)
-		default_pkg_name "$1"
-		;;
-	esac
-}
 
 # ──────────────────────── required install ────────────────────────
 # Upstream re-probes EVERY binary after the batch install (one "installed" /
-# "still missing" line each) instead of re-printing the whole section, and
-# keeps a single failure verdict — hence this override of the shared step.
-install_missing_required() {
-	${INSTALL_MODE:-false} || return 0
-	[ ${#MISSING_REQUIRED[@]} -gt 0 ] || return 0
-	echo -e "${YELLOW}Installing: ${MISSING_REQUIRED[*]}...${NC}"
-	local pkgs=() b
-	for b in "${MISSING_REQUIRED[@]}"; do pkgs+=("$(pkg_name "$b")"); done
-	if install_pkg "${pkgs[@]}"; then
-		MISSING_REQUIRED=()
-		REQUIRED_FAILURES=0 # verdict is recomputed from the re-probe below
-		for b in "${REQUIRED_BINS[@]}" "${REQUIRED_EXT_BINS[@]}"; do
-			if bin_req_ok "$b"; then
-				ok "$(dep_name "$b") installed"
-			else
-				MISSING_REQUIRED+=("$b")
-				fail "$(dep_name "$b") still missing"
-				REQUIRED_FAILURES=$((REQUIRED_FAILURES + 1))
-			fi
-		done
-		if [ ${#MISSING_REQUIRED[@]} -eq 0 ]; then
-			echo -e "${GREEN}All required tools now available.${NC}"
-		else
-			echo -e "${RED}Not in system repos — install manually: sway(COMBO), xdg-desktop-portal-wlr, xdg-desktop-portal-gtk, polkit-gnome, wezterm (https://wezterm.org/installation)${NC}"
-		fi
-	else
-		echo -e "${RED}Install command failed. Run: $(get_install_hint "${pkgs[*]}")${NC}"
-	fi
-	echo ""
-}
+# "still missing" line each) instead of re-printing the whole section —
+# REQUIRED_REPROBE_LIST + REQUIRED_NAME_FN + REQUIRED_MANUAL_HINT reproduce
+# that via the shared install_missing_required (monkey-scripts/lib/checks.sh).
+# Package-name mapping lives in the shared lib/pkg.sh table.
+REQUIRED_REPROBE_LIST=("${REQUIRED_BINS[@]}" "${REQUIRED_EXT_BINS[@]}")
+REQUIRED_REPROBE_FN=bin_req_ok
+REQUIRED_NAME_FN=dep_name
+REQUIRED_MANUAL_HINT="Not in system repos — install manually: sway(COMBO), xdg-desktop-portal-wlr, xdg-desktop-portal-gtk, polkit-gnome, wezterm (https://wezterm.org/installation)"
 
 # ──────────────────────── recommended ────────────────────────
 RECOMMENDED_NOTE="(Missing won't block monkey-sway, but will degrade tray / brightness / tooling experience)"
