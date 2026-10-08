@@ -18,13 +18,6 @@ set -euo pipefail
 PROJECT=monkey-sway
 
 # ──────────────────────── required ────────────────────────
-# Binary lists kept alongside the specs: the post-install re-probe below
-# walks them (not the spec list) and prints one line per binary.
-REQUIRED_BINS=(sway swaymsg swaybg swayidle swaylock swaynag waybar wezterm bemenu grim slurp wl-copy wpctl mako)
-# D-Bus services that may live outside PATH (/usr/lib, /usr/libexec,
-# /usr/lib/polkit-gnome).
-REQUIRED_EXT_BINS=(xdg-desktop-portal-wlr xdg-desktop-portal-gtk polkit-gnome-authentication-agent-1)
-
 REQUIRED_CHECKS=(
 	"@header|Required tools"
 	"@note|(compositor/bar/terminal/launcher/screenshot/portals/polkit/audio/idle/wallpaper/lock)"
@@ -47,54 +40,14 @@ REQUIRED_CHECKS=(
 	"polkit-gnome-authentication-agent-1|anyofext:polkit-gnome-authentication-agent-1|polkit-gnome (polkit auth agent)"
 )
 
-# Human-readable name for a dependency binary (used by the re-probe below).
-dep_name() {
-	case "$1" in
-	sway) echo "sway (compositor)" ;;
-	swaymsg) echo "swaymsg (ships with sway)" ;;
-	swaybg) echo "swaybg (wallpaper)" ;;
-	swayidle) echo "swayidle (idle management)" ;;
-	swaylock) echo "swaylock (lock screen)" ;;
-	swaynag) echo "swaynag (exit confirm / warning dialog)" ;;
-	waybar) echo "waybar (status bar)" ;;
-	wezterm) echo "wezterm (default terminal)" ;;
-	bemenu) echo "bemenu (app launcher)" ;;
-	grim) echo "grim (screenshot)" ;;
-	slurp) echo "slurp (region select)" ;;
-	wl-copy) echo "wl-clipboard (wl-copy)" ;;
-	wlogout) echo "wlogout (power menu)" ;;
-	wpctl) echo "wireplumber (wpctl)" ;;
-	mako) echo "mako (notification daemon)" ;;
-	xdg-desktop-portal-wlr) echo "xdg-desktop-portal-wlr (capture/sharing portal)" ;;
-	xdg-desktop-portal-gtk) echo "xdg-desktop-portal-gtk (file-chooser portal)" ;;
-	polkit-gnome-authentication-agent-1) echo "polkit-gnome (polkit auth agent)" ;;
-	nm-applet) echo "nm-applet (tray network manager)" ;;
-	hyprpicker) echo "hyprpicker (color picker)" ;;
-	wlsunset) echo "wlsunset (color temperature)" ;;
-	*) echo "$1" ;;
-	esac
-}
-
-# Pure availability test used after --install: PATH or /usr/lib* lookup.
-bin_req_ok() {
-	local b="$1" p
-	if have_native_cmd "$b"; then return 0; fi
-	for p in "/usr/lib/$b" "/usr/libexec/$b" "/usr/lib/policykit-1-gnome/$b" "/usr/lib/polkit-gnome/$b"; do
-		[ -x "$p" ] && return 0
-	done
-	return 1
-}
-
-
 # ──────────────────────── required install ────────────────────────
-# Upstream re-probes EVERY binary after the batch install (one "installed" /
-# "still missing" line each) instead of re-printing the whole section —
-# REQUIRED_REPROBE_LIST + REQUIRED_NAME_FN + REQUIRED_MANUAL_HINT reproduce
-# that via the shared install_missing_required (monkey-scripts/lib/checks.sh).
-# Package-name mapping lives in the shared lib/pkg.sh table.
-REQUIRED_REPROBE_LIST=("${REQUIRED_BINS[@]}" "${REQUIRED_EXT_BINS[@]}")
-REQUIRED_REPROBE_FN=bin_req_ok
-REQUIRED_NAME_FN=dep_name
+# The post-install re-probe walks the specs themselves (one "installed" /
+# "still missing" line each, anyofext semantics included) instead of
+# re-printing the whole section — REQUIRED_REPROBE_LIST with spec entries +
+# REQUIRED_MANUAL_HINT reproduce that via the shared install_missing_required
+# (monkey-scripts/lib/checks.sh). Package-name mapping lives in the shared
+# lib/pkg.sh table.
+REQUIRED_REPROBE_LIST=("${REQUIRED_CHECKS[@]}")
 REQUIRED_MANUAL_HINT="Not in system repos — install manually: sway(COMBO), xdg-desktop-portal-wlr, xdg-desktop-portal-gtk, polkit-gnome, wezterm (https://wezterm.org/installation)"
 
 # ──────────────────────── recommended ────────────────────────
@@ -116,50 +69,12 @@ ADVISORY_SECTIONS=(
 )
 
 # ──────────────────────── config ────────────────────────
-# sway's config check is its own: ANY symlink is accepted, and a plain file
-# that is -ef the repo copy counts as linked too. Overrides the shared
-# check_config_files after sourcing.
-check_config_files() {
-	if $SKIP_CONFIG_CHECKS; then
-		warn "config checks skipped (handled by the installer)"
-		return 0
-	fi
-	echo -e "${BOLD}Config files${NC}"
-	local script_dir
-	script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-
-	local sway_config="${HOME}/.config/sway/config"
-	if [ -L "$sway_config" ]; then
-		local target
-		target=$(readlink -f "$sway_config" 2>/dev/null || readlink "$sway_config")
-		ok "sway config → ${target}"
-	elif [ -f "$sway_config" ]; then
-		if [ "$sway_config" -ef "${script_dir}/config" ]; then
-			ok "sway config → ${script_dir}/config"
-		else
-			warn "config exists but is not a symlink to ${script_dir}/config"
-		fi
-	else
-		fail "sway config not found (run: ln -sf ${script_dir}/config ~/.config/sway/config)"
-		REQUIRED_FAILURES=$((REQUIRED_FAILURES + 1))
-	fi
-
-	local waybar_dir="${HOME}/.config/waybar"
-	if [ -L "$waybar_dir" ]; then
-		local target
-		target=$(readlink -f "$waybar_dir" 2>/dev/null || readlink "$waybar_dir")
-		ok "waybar → ${target}"
-	elif [ -f "$waybar_dir/config.jsonc" ] && [ -f "$waybar_dir/style.css" ]; then
-		if [ -f "${script_dir}/waybar/config.jsonc" ] && [ "$waybar_dir/config.jsonc" -ef "${script_dir}/waybar/config.jsonc" ]; then
-			ok "waybar → ${script_dir}/waybar"
-		else
-			warn "waybar is a plain directory (not a symlink to ${script_dir}/waybar)"
-		fi
-	else
-		fail "waybar config not found (run: ln -sfn ${script_dir}/waybar ~/.config/waybar)"
-		REQUIRED_FAILURES=$((REQUIRED_FAILURES + 1))
-	fi
-	echo ""
-}
+# src|dst|desc|mode|name|hint — mode "" accepts any existing symlink target
+# (sway's own semantics: whatever the link points at is reported, not judged).
+REPO_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+CONFIG_LINKS=(
+	"$REPO_DIR/config|$HOME/.config/sway/config|sway config|||sway config not found (run: ln -sf $REPO_DIR/config ~/.config/sway/config)"
+	"$REPO_DIR/waybar|$HOME/.config/waybar|waybar|||waybar config not found (run: ln -sfn $REPO_DIR/waybar ~/.config/waybar)"
+)
 
 checkhealth_main "$@"
