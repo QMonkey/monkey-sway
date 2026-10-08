@@ -106,31 +106,16 @@ SUMMARY_LINES=(
 	"  Start sway from a TTY (never under sudo/root): ${CYAN}sway${NC}"
 	"  Update: ${CYAN}cd $INSTALL_DIR && git pull && swaymsg reload${NC}"
 )
+# sway's links are reported with the full destination path and never
+# re-created under an existing entry — that is the shared link_config's own
+# behaviour (lib/config.sh), so the links are plain SYMLINKS data.
+SYMLINKS=(
+	"$INSTALL_DIR/config|$HOME/.config/sway/config"
+	"$INSTALL_DIR/pictures|$HOME/.config/sway/pictures"
+	"$INSTALL_DIR/waybar|$HOME/.config/waybar"
+)
 
 # ──────────────────────── project steps ────────────────────────
-
-# Sway ships --needed semantics in the upstream installer: skip packages the
-# system already has instead of re-installing them. Overrides the shared
-# install_pkg for this script only (checkhealth.sh runs in its own process).
-install_pkg() {
-	refresh_pkg
-	local rc=0
-	case "$OS" in
-	debian | ubuntu) retry -t 1800 -s "apt-get install" sudo_cmd apt-get install -y "$@" ;;
-	arch) retry -t 1800 -s "pacman install" sudo_cmd pacman -S --needed --noconfirm "$@" ;;
-	opensuse) retry -t 1800 -s "zypper install" sudo_cmd zypper --non-interactive install -y "$@" ;;
-	centos)
-		sudo_cmd dnf install -y epel-release || true
-		retry -t 1800 -s "dnf install" sudo_cmd dnf install -y "$@"
-		;;
-	fedora)
-		retry -t 1800 -s "dnf install" sudo_cmd dnf install -y "$@"
-		;;
-	*) rc=1 ;;
-	esac || rc=$?
-	hash -r
-	return "$rc"
-}
 
 install_sway() {
 	if have_native_cmd sway; then
@@ -157,11 +142,11 @@ install_step_prepare() {
 # write_tty_autostart did — slot it in before "Update:".
 install_step_autostart() {
 	if [ -n "$KMSCON_TTYS" ]; then
-		if is_wsl; then
-			warn "WSL detected — skipping kmscon setup (no VT login)."
-		else
-			ensure_kmscon "$KMSCON_TTYS" || warn "kmscon setup failed — continuing without it."
+		# The WSL / non-Linux / no-KMS guards live in ensure_kmscon itself.
+		if ensure_kmscon "$KMSCON_TTYS"; then
 			KMSCON_DONE=1
+		else
+			warn "kmscon setup failed — continuing without it."
 		fi
 	fi
 	write_tty_autostart sway sway
@@ -181,32 +166,6 @@ install_step_autostart() {
 			"${SUMMARY_LINES[-1]}"
 		)
 	fi
-}
-
-# sway's links are reported with the full destination path and never
-# re-created under an existing entry — the original's own helpers, kept
-# verbatim (they override the shared setup_symlinks / link_config).
-link_config() {
-	local src="$1" dst="$2"
-	if [ -e "$dst" ] || [ -L "$dst" ]; then
-		if [ -L "$dst" ] && [ "$(readlink -f "$dst")" = "$(readlink -f "$src")" ]; then
-			ok "$(basename "$dst") already linked."
-		else
-			warn "$dst exists and is not this repo's link — skipping."
-			echo -e "    re-link manually with: ${CYAN}ln -sfn $src $dst${NC}"
-		fi
-		return 0
-	fi
-	ln -sfn "$src" "$dst"
-	ok "$dst → $src"
-}
-
-setup_symlinks() {
-	info "Setting up configuration symlinks..."
-	mkdir -p "$HOME/.config/sway"
-	link_config "$INSTALL_DIR/config" "$HOME/.config/sway/config"
-	link_config "$INSTALL_DIR/pictures" "$HOME/.config/sway/pictures"
-	link_config "$INSTALL_DIR/waybar" "$HOME/.config/waybar"
 }
 
 # ──────────────────────── optional kmscon takeover ────────────────────────
