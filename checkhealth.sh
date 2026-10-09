@@ -65,7 +65,7 @@ RECOMMENDED_CHECKS=(
 # title|note|type|params|ok|incomplete|missing — the missing text carries its
 # own second line (the nerd-fonts URL).
 ADVISORY_SECTIONS=(
-	"Fonts (optional)|(waybar icons use Nerd Font glyphs)|nerdfont||Nerd Font found||No Nerd Font detected — waybar icons may render as boxes\n    https://github.com/ryanoasis/nerd-fonts"
+	"$ADVISORY_NERDFONT"
 )
 
 # ──────────────────────── config ────────────────────────
