@@ -151,7 +151,7 @@ install_step_autostart() {
 
 # ──────────────────────── optional kmscon takeover ────────────────────────
 # --with-kmscon [tty[,tty...]] is parsed by the shared parse_install_args
-# (lib/kmscon.sh): it runs in this shell (a subshell would drop
+# (install.sh entry point): it runs in this shell (a subshell would drop
 # KMSCON_TTYS) and fills KMSCON_TTYS/KMSCON_DONE/_INSTALL_ARGS directly —
 # the flag never reaches install_main.
 parse_install_args "$@"
