@@ -114,7 +114,7 @@ comment block at the top of `config`. Two ways to apply them:
 One-liner (installs deps, clones this repo and links the configs):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/QMonkey/monkey-sway/master/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/QMonkey/monkey-sway/master/install.sh | bash 2>&1 | tee monkey-sway-install.log
 ```
 
 > The one-liner needs `git` besides `curl` itself: the installer clones this repository into `~/Documents/monkey-sway` before it can install anything. If `git` is missing, the script stops with an error — install it with your system's package manager and re-run the same command.
@@ -292,7 +292,7 @@ bash install.sh --with-kmscon tty1,tty2
 On the `curl | bash` path, pass the flag after `bash -s --`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/QMonkey/monkey-sway/master/install.sh | bash -s -- --with-kmscon
+curl -fsSL https://raw.githubusercontent.com/QMonkey/monkey-sway/master/install.sh | bash -s -- --with-kmscon 2>&1 | tee monkey-sway-install.log
 ```
 
 > **Warning:** pass `tty1` only when no display manager owns it — a DM's
