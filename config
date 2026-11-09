@@ -192,7 +192,6 @@ bindsym $mod+Return exec $term
 bindsym $mod+d exec $menu
 bindsym $mod+c kill
 bindsym $mod+v floating toggle
-# $mod+p pseudo-tiling had no sway equivalent and was dropped
 bindsym $mod+t layout toggle split
 bindsym $mod+f fullscreen toggle
 bindsym $mod+Ctrl+p sticky toggle
@@ -294,7 +293,7 @@ for_window [title="Picture-in-Picture"] floating enable, sticky enable
 # File progress dialogs
 for_window [title="File Operation Progress"] floating enable, move position center
 
-# NOTE: sway has no per-window opacity, no blur, no border rounding and no
+# NOTE: sway has no blur and no border rounding, and no
 # dwindle/pseudo layouts. Those Hyprland features are intentionally dropped.
 # =============================================================================
 # END OF CONFIG
