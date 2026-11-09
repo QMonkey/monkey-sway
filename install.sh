@@ -5,9 +5,9 @@ set -euo pipefail
 # monkey-sway one-shot installer
 # Usage: curl -fsSL https://raw.githubusercontent.com/QMonkey/monkey-sway/master/install.sh | bash
 #
-# Installs sway + dependencies from the distro repo (via
-# checkhealth.sh --install), clones this repo and links the configs, and
-# writes a guarded VT autostart block into the shell profile files
+# Installs sway + dependencies from the distro repo (sway by this file, the
+# rest via checkhealth.sh --install), clones this repo and links the configs,
+# and writes a guarded VT autostart block into the shell profile files
 # (the meta-installer's dependency order puts the compositor before tmux,
 # so the block lands above any tmux auto-start block).
 #
@@ -21,7 +21,7 @@ set -euo pipefail
 
 # ──────────────────────── repository identity ────────────────────────
 # Declared before the framework is sourced: the bootstrap below needs both
-# values, and clones into the very directory clone_monkey_project would
+# values, and clones into the very directory clone_project would
 # have used — one clone per run, not two.
 PROJECT=monkey-sway
 PROJECT_REPO=https://github.com/QMonkey/monkey-sway.git
@@ -40,15 +40,15 @@ if [ ! -f "$_monkey_scripts/install.sh" ]; then
 		# Outdated checkout: update it in place and keep running from it.
 		git -C "$_monkey_dir" pull --ff-only || true
 		if [ ! -f "$_monkey_dir/scripts/install.sh" ]; then
-			echo "monkey-scripts missing from $_monkey_dir (no scripts/ subtree)." >&2
-			echo "  git -C $_monkey_dir pull    # outdated checkout — or the repo never added the subtree" >&2
+			printf '%s\n' "monkey-scripts missing from $_monkey_dir (no scripts/ subtree)." >&2
+			printf '%s\n' "  git -C $_monkey_dir pull    # outdated checkout — or the repo never added the subtree" >&2
 			exit 1
 		fi
 		_monkey_scripts="$_monkey_dir/scripts"
 	else
 		# curl|bash or a .git-less directory: the only path to a
 		# same-revision scripts/ is the INSTALL_DIR checkout.
-		# clone_monkey_project cannot do this job — it lives in the very
+		# clone_project cannot do this job — it lives in the very
 		# scripts/ being fetched. INSTALL_DIR is where the framework's clone
 		# step would have put the checkout too, so that step only confirms it.
 		if [ -d "$INSTALL_DIR/.git" ]; then
@@ -56,15 +56,15 @@ if [ ! -f "$_monkey_scripts/install.sh" ]; then
 			git -C "$INSTALL_DIR" pull --ff-only || true
 		elif [ -d "$INSTALL_DIR" ] && [ -n "$(ls -A "$INSTALL_DIR")" ]; then
 			# git clone would refuse too, so say why in our own words.
-			echo "$INSTALL_DIR is not empty and is not a git clone." >&2
-			echo "  move it aside, delete it, or set INSTALL_DIR elsewhere." >&2
+			printf '%s\n' "$INSTALL_DIR is not empty and is not a git clone." >&2
+			printf '%s\n' "  move it aside, delete it, or set INSTALL_DIR elsewhere." >&2
 			exit 1
 		else
 			# Fresh clone — the ONLY sub-branch where git is hard-required:
 			# the pull sub-branch above degrades gracefully without it, and
 			# a zip/tarball must not fail here just for a missing git.
 			if ! command -v git >/dev/null 2>&1; then
-				echo "git is required to clone $PROJECT — install it first (e.g. sudo apt-get install git), then re-run." >&2
+				printf '%s\n' "git is required to clone $PROJECT — install it first (e.g. sudo apt-get install git), then re-run." >&2
 				exit 1
 			fi
 			# No retry() available yet — the framework loads only after this
@@ -96,15 +96,14 @@ fi
 
 # ──────────────────────── layout & data ────────────────────────
 LINUX_ONLY=1
-FINISH_INJECT=0 # the original writes no TIOCSTI hint — just the summary
+FINISH_INJECT=0 # no TIOCSTI injection hint at the end — the summary is the last output
 SUMMARY_LINES=(
 	"  Config: ${CYAN}$INSTALL_DIR${NC} → ${CYAN}~/.config/sway (+pictures) + ~/.config/waybar${NC}"
 	"  Start sway from a TTY (never under sudo/root): ${CYAN}sway${NC}"
 	"  Update: ${CYAN}cd $INSTALL_DIR && git pull && swaymsg reload${NC}"
 )
-# sway's links are reported with the full destination path and never
-# re-created under an existing entry — that is the shared link_config's own
-# behaviour (lib/config.sh), so the links are plain SYMLINKS data.
+# No per-entry mode: the shared link_config (lib/config.sh) reports an existing
+# target and never re-creates a link under it, so plain SYMLINKS data suffices.
 SYMLINKS=(
 	"$INSTALL_DIR/config|$HOME/.config/sway/config"
 	"$INSTALL_DIR/pictures|$HOME/.config/sway/pictures"
@@ -127,12 +126,13 @@ install_sway() {
 }
 
 # ──────────────────────── hooks ────────────────────────
-# A hook prints its own trailing blank line when it produced output; the
-# upstream separates setup_sudo from the first step with its own blank.
+# A hook prints its own trailing blank line when it produced output; setup_sudo
+# prints none, so the blank that separates it from the first step is this hook's
+# own leading one.
 install_step_prepare() {
-	echo ""
+	printf '\n'
 	install_sway
-	echo ""
+	printf '\n'
 }
 
 # The compositor autostart line of the summary depends on what
@@ -140,7 +140,7 @@ install_step_prepare() {
 install_step_autostart() {
 	run_kmscon_setup
 	write_tty_autostart sway sway
-	echo ""
+	printf '\n'
 	if [ -n "$AUTOSTART_FILES" ]; then
 		summary_insert_at 2 "  Autostart: a VT login execs ${CYAN}sway${NC} unless sway is already running (block in:${CYAN}$AUTOSTART_FILES${NC})"
 	fi
