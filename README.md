@@ -14,39 +14,48 @@ The project monkey-sway is a clean, fast and vim-flavored Wayland desktop config
 | Auto monitor detect | Monitors are auto-detected at their highest refresh rate; picture wallpaper via swaybg             |
 | Laptop aware        | Touchpad natural scrolling and brightness keys work automatically on battery machines              |
 | No animations       | Animations/blur/rounding are not configurable on sway by design; performance-first                 |
-| waybar status bar   | Paired waybar config (workspaces, clock, tray, network, audio, battery)                            |
+| waybar status bar   | Paired waybar config (workspaces, clock, tray, audio, battery)                                     |
 | sway-native tools   | swaybg / swayidle / swaylock / swaynag + bemenu, grim, wl-clipboard, wpctl                         |
 
 ## Key design decisions
 
-| Hyprland feature            | Sway equivalent / note                                                                                |
-| --------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `dwindle` layout            | tiling `splith` default; `Super+t` toggles split                                                      |
-| Pseudo-tiling (`Super+p`)   | dropped (no sway equivalent)                                                                          |
-| Special workspace "magic"   | sway scratchpad (`Super+s` show, `Super+Shift+s` move to scratchpad)                                  |
-| `Super+[` / `]` monitor cyc | `focus output left` / `right` (spatial; no cycle prev/next in sway)                                   |
-| Rounded corners / blur      | not supported by sway                                                                                 |
-| Per-window opacity          | sway has only static `opacity`, so the terminal 0.95 rule is dropped                                  |
-| Supress-maximize rule       | not needed on sway                                                                                    |
-| 3-finger touchpad swipe     | skipped (sway ≥ 1.10 _does_ support `bindgesture swipe:left workspace next`, add it back if you want) |
-| `Super+Shift+hjkl` resize   | `resize shrink \| grow width \| height 20px`, plus a dedicated `Super+r` resize mode                  |
-| `Super+Shift+e` exit        | `swaynag` confirmation dialog before `swaymsg exit`                                                   |
-| hyprlock / hypridle         | swaylock (sonokai colors) + swayidle (auto-lock after 5 min, dpms off)                                |
-| xdg-desktop-portal-hyprland | xdg-desktop-portal-wlr                                                                                |
-| hyprpolkitagent             | polkit-gnome-authentication-agent-1                                                                   |
-| hyprpaper                   | `output * bg` wallpaper image (swaybg auto-spawned)                                                   |
+| Hyprland feature            | Sway equivalent / note                                                                               |
+| --------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `dwindle` layout            | tiling `splith` default; `Super+t` toggles split                                                     |
+| Pseudo-tiling (`Super+p`)   | dropped (no sway equivalent)                                                                         |
+| Special workspace "magic"   | sway scratchpad (`Super+s` show, `Super+Shift+s` move to scratchpad)                                 |
+| `Super+[` / `]` monitor cyc | `focus output left` / `right` (spatial; no cycle prev/next in sway)                                  |
+| Rounded corners / blur      | not supported by sway                                                                                |
+| Per-window opacity          | sway's `opacity` is static (no animation), so the terminal 0.95 rule is dropped                      |
+| Supress-maximize rule       | not needed on sway                                                                                   |
+| 3-finger touchpad swipe     | skipped (sway ≥ 1.8 _does_ support `bindgesture swipe:left workspace next`, add it back if you want) |
+| `Super+Shift+hjkl` resize   | `resize shrink \| grow width \| height 20px`, plus a dedicated `Super+r` resize mode                 |
+| `Super+Shift+e` exit        | `swaynag` confirmation dialog before `swaymsg exit`                                                  |
+| hyprlock / hypridle         | swaylock (sonokai colors) + swayidle (auto-lock after 5 min, dpms off)                               |
+| xdg-desktop-portal-hyprland | xdg-desktop-portal-wlr                                                                               |
+| hyprpolkitagent             | polkit-gnome-authentication-agent-1                                                                  |
+| hyprpaper                   | `output * bg` wallpaper image (swaybg auto-spawned)                                                  |
 
 ## Requirements
 
 - Sway (i3-compatible config; the bundled config uses only core commands)
 - waybar
 - A Wayland session (Wayland-only; no X11 fallback)
+- Linux: `install.sh` is `LINUX_ONLY`, so on macOS it stops with a warning
+  before any package question. `os_init` accepts only the ids that have
+  package tables (`debian ubuntu arch opensuse centos fedora`); a Linux distro
+  outside that list is refused right there, before the first package question,
+  instead of running on with no package lane and installing nothing.
+  Inside WSL the run completes but skips the two
+  VT-only parts — the autostart block (`write_tty_autostart`) and `--with-kmscon`
+  (`ensure_kmscon`) both detect WSL and skip, since there is no VT login and
+  WSLg renders GUI apps directly.
 
 ## Installation
 
 ### 1. Install dependencies
 
-`install.sh` and `checkhealth.sh --install` install these automatically (apt/zypper/dnf/pacman). The table below documents what gets checked and why:
+`install.sh` and `checkhealth.sh --install` install these automatically with the system package manager (pacman on Arch, apt on Debian/Ubuntu, zypper on openSUSE, dnf on CentOS/Fedora). The table below documents what gets checked and why:
 
 | Tool                                        | Purpose                                                       | Required |
 | ------------------------------------------- | ------------------------------------------------------------- | -------- |
@@ -60,8 +69,8 @@ The project monkey-sway is a clean, fast and vim-flavored Wayland desktop config
 | bemenu                                      | Application launcher (`Super+d`, `bemenu-run`)                | Yes      |
 | grim + slurp                                | Screenshot region (`Super+,`) / full screen (`Super+Shift+,`) | Yes      |
 | wl-clipboard (`wl-copy`)                    | Screenshots pipe to the clipboard                             | Yes      |
-| wireplumber (`wpctl`)                       | Volume / mute keys and waybar audio module                    | Yes      |
-| mako                                        | Notification daemon (waybar notification backend)             | Yes      |
+| wireplumber (`wpctl`)                       | Volume / mute keys (`wpctl`); waybar module is `pulseaudio`   | Yes      |
+| mako                                        | Notification daemon (popups; no waybar notification module)   | Yes      |
 | xdg-desktop-portal-wlr                      | Screen capture / screen sharing portal backend                | Yes      |
 | xdg-desktop-portal-gtk                      | File chooser portal for GTK/Flatpak apps                      | Yes      |
 | polkit-gnome                                | Polkit authentication agent for GUI privilege prompts         | Yes      |
@@ -73,10 +82,10 @@ The project monkey-sway is a clean, fast and vim-flavored Wayland desktop config
 | nm-applet            | Tray network manager applet (auto-started) | Recommended |
 | brightnessctl        | Brightness keys                            | Recommended |
 | pavucontrol          | Audio mixer (waybar pulseaudio click)      | Recommended |
-| nm-connection-editor | Network settings (waybar network click)    | Recommended |
+| nm-connection-editor | Network settings                           | Recommended |
 | gnome-calendar       | Calendar (waybar clock right-click)        | Optional    |
-| hyprpicker           | Color picker                               | Optional    |
-| wlsunset             | Color temperature                          | Optional    |
+| hyprpicker           | Color picker                               | Recommended |
+| wlsunset             | Color temperature                          | Recommended |
 
 ```bash
 # Arch
@@ -86,10 +95,11 @@ sudo pacman -S sway swaybg swayidle swaylock waybar bemenu grim slurp wl-clipboa
     wlsunset hyprpicker
 # wezterm: https://wezterm.org/installation (or: sudo pacman -S wezterm)
 
-# Debian (openSUSE/DNF analogous; package names may differ, e.g. polkit-gnome)
+# Debian (openSUSE/DNF analogous; package names may differ, e.g. policykit-1-gnome.
+# nm-connection-editor ships inside network-manager-gnome here, so it is not a name of its own.)
 sudo apt-get install sway swaybg swayidle swaylock waybar bemenu grim slurp wl-clipboard \
-    wireplumber mako xdg-desktop-portal-wlr xdg-desktop-portal-gtk polkit-gnome \
-    network-manager-gnome brightnessctl pavucontrol nm-connection-editor gnome-calendar
+    wireplumber mako-notifier xdg-desktop-portal-wlr xdg-desktop-portal-gtk policykit-1-gnome \
+    network-manager-gnome brightnessctl pavucontrol gnome-calendar
 ```
 
 #### Environment variables (single-file note)
@@ -107,22 +117,30 @@ comment block at the top of `config`. Two ways to apply them:
 ```bash
 ./checkhealth.sh          # report only
 ./checkhealth.sh --install  # auto-install what's missing (apt/zypper/dnf/pacman)
+./checkhealth.sh --help     # all options (incl. --skip-check-config) and the SUDO_DROPIN knob
 ```
+
+The report covers the required and recommended tools above, an advisory on Nerd Font presence and
+the two config links (`~/.config/sway/config`, `~/.config/waybar`). It exits 1 when any required
+tool is missing — also after `--install`, if something could not be installed; `install.sh` only
+warns in that case and carries on. When `install.sh` calls it, the config-link checks are skipped
+(`--skip-check-config`): that run happens before the links are created.
 
 ### 3. Install monkey-sway
 
-One-liner (installs deps, clones this repo and links the configs):
+One-liner (installs sway, clones this repo, installs the remaining dependencies, writes the VT
+autostart block and links the configs):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/QMonkey/monkey-sway/master/install.sh | bash 2>&1 | tee monkey-sway-install.log
 ```
 
-> The one-liner needs `git` besides `curl` itself: the installer clones this repository into `~/Documents/monkey-sway` before it can install anything. If `git` is missing, the script stops with an error — install it with your system's package manager and re-run the same command.
+> The one-liner needs `git` besides `curl` itself: the installer clones this repository into `~/Documents/monkey-sway` before it can install anything. If `git` is missing, the script stops with an error — install it with your system's package manager and re-run the same command. The clone destination is overridable through `INSTALL_DIR`; on this path set it for the `bash` side of the pipe, e.g. `curl -fsSL … | INSTALL_DIR=$HOME/src/monkey-sway bash`.
 
-The installer also writes a **guarded autostart block** to your shell profile files (`~/.zprofile` for zsh; `~/.bash_profile` or `~/.profile` plus `~/.bashrc` for bash):
+The installer also writes a **guarded autostart block** to your shell profile files (`~/.zprofile` for zsh; `~/.bash_profile` or `~/.profile` plus `~/.bashrc` for bash; `~/.profile` for any other login shell — the target is the shell recorded in the password database, falling back to `$SHELL`):
 
 ```bash
-# monkey-sway autostart (remove these lines to disable)
+# [tail] monkey-sway autostart (remove these lines to disable)
 # Keep this block ABOVE any "exec tmux" auto-start block: on a bare TTY
 # exec replaces the login shell with the compositor, so the tmux
 # auto-start line is never reached and the desktop never runs inside a
@@ -130,7 +148,19 @@ The installer also writes a **guarded autostart block** to your shell profile fi
 # the tmux auto-start runs normally.
 if [ -z "${WAYLAND_DISPLAY:-}" ] && [ -z "${DISPLAY:-}" ]; then
     case "$(tty 2>/dev/null)" in
-    /dev/tty[0-9]*) pgrep -x sway >/dev/null 2>&1 || exec sway ;;
+    /dev/tty[0-9]*)
+        if pgrep -x sway >/dev/null 2>&1; then
+            : # single instance: the compositor already owns a session
+        elif [ "${TERM:-}" = kmscon ]; then
+            if command -v kmscon-launch-gui >/dev/null 2>&1; then
+                exec kmscon-launch-gui sway
+            else
+                echo "kmscon session: kmscon-launch-gui not found — start sway manually." >&2
+            fi
+        else
+            exec sway
+        fi
+        ;;
     esac
 fi
 ```
@@ -148,8 +178,10 @@ ln -sfn $(pwd)/pictures ~/.config/sway/pictures
 ln -sfn $(pwd)/waybar ~/.config/waybar
 ```
 
-Then start (or restart) sway. waybar, mako, the polkit agent and nm-applet are
-launched automatically on startup. The `pictures` link is required — the
+Then start (or restart) sway. waybar, mako, swayidle, the polkit agent, both
+`xdg-desktop-portal-*` backends and nm-applet are launched automatically on
+startup; every one of those `exec_always` lines is `pgrep`-guarded, so a
+reload never doubles an instance. The `pictures` link is required — the
 wallpaper in the config is referenced as `~/.config/sway/pictures/...`.
 
 ### 4. Start sway
@@ -198,7 +230,7 @@ No need to stop the display manager: logind hands the seat (DRM master + input d
 Add the following to the profile (`~/.zprofile` for zsh, `~/.bash_profile`/`~/.profile` + `~/.bashrc` for bash):
 
 ```bash
-# monkey-sway autostart (remove these lines to disable)
+# [tail] monkey-sway autostart (remove these lines to disable)
 # Keep this block ABOVE any "exec tmux" auto-start block: on a bare TTY
 # exec replaces the login shell with the compositor, so the tmux
 # auto-start line is never reached and the desktop never runs inside a
@@ -206,7 +238,19 @@ Add the following to the profile (`~/.zprofile` for zsh, `~/.bash_profile`/`~/.p
 # the tmux auto-start runs normally.
 if [ -z "${WAYLAND_DISPLAY:-}" ] && [ -z "${DISPLAY:-}" ]; then
     case "$(tty 2>/dev/null)" in
-    /dev/tty[0-9]*) pgrep -x sway >/dev/null 2>&1 || exec sway ;;
+    /dev/tty[0-9]*)
+        if pgrep -x sway >/dev/null 2>&1; then
+            : # single instance: the compositor already owns a session
+        elif [ "${TERM:-}" = kmscon ]; then
+            if command -v kmscon-launch-gui >/dev/null 2>&1; then
+                exec kmscon-launch-gui sway
+            else
+                echo "kmscon session: kmscon-launch-gui not found — start sway manually." >&2
+            fi
+        else
+            exec sway
+        fi
+        ;;
     esac
 fi
 ```
@@ -273,9 +317,11 @@ Reload with `swaymsg reload` (or restart sway) and restart waybar for bar change
 Pass `--with-kmscon [tty[,tty...]]` to hand the listed VTs to
 [kmscon](https://github.com/Aetf/kmscon) instead of a bare getty: the installer
 enables `kmscon@ttyN` on each listed VT and masks the matching `getty@ttyN`
-instances. A bare getty is deliberately kept on every **other** VT — the fbcon
-console is the last resort when the whole KMS/DRM stack breaks, so the
-replacement set is exactly the list you pass. Inside a kmscon session the
+instances (masking covers tty1-6 — above tty6 there is no default getty
+instance, so nothing is masked there). A bare getty is deliberately kept on
+every **other** VT — the fbcon console is the last resort when the whole
+KMS/DRM stack breaks, so the replacement set is exactly the list you pass.
+Inside a kmscon session the
 autostart block wraps the compositor in `kmscon-launch-gui` (shipped by the
 distro kmscon package): the wrapper backgrounds the kmscon terminal so the
 compositor can take DRM master on the same VT, and restores kmscon when the
@@ -402,16 +448,12 @@ Super+,          Select a region with slurp, screenshot with grim, copy to clipb
 Super+Shift+,    Screenshot the full screen, copy to clipboard
 ```
 
-> Note: the upstream config this was ported from bound the bare `,` key for
-> screenshots instead of `Super+,` in its lua file (its README documented
-> `Super+,`); monkey-sway follows the documented `Super+,` behavior.
-
 ## Window rules
 
 - Utility apps (calculator, pavucontrol, settings dialogs, etc.) open floating and centered — see the `for_window` list in `config`
 - `Picture-in-Picture` windows float and stay pinned to the output (`sticky`)
 - Blank XWayland drag shadows (`class`/`title` empty) are never auto-focused
-- sway has no per-window opacity/blur/rounding, so the Hyprland decoration rules are dropped
+- sway has no blur or rounding and only static `opacity` (no animation), so the Hyprland decoration rules are dropped
 
 ## Laptop extras
 
@@ -424,16 +466,20 @@ setup is needed.
 ```text
 modules-left:    sway/workspaces  (click to activate, scroll to switch)
 modules-center:  clock            (click for full date, right-click gnome-calendar)
-modules-right:   tray, network, pulseaudio, battery
+modules-right:   tray, pulseaudio, battery
 ```
 
 - Exit is `Super+Shift+e` (swaynag), so there is no power module
 - Battery warning (30%) / critical (15%) states; hidden on desktops without a battery
 - Same sonokai palette as `config`
+- Text and icons use `JetBrains Mono` with a Nerd Font fallback (`waybar/style.css`);
+  sway's own titles/overlay use `pango:JetBrains Mono 12` (`config`). Without a Nerd Font the
+  bar icons render as boxes — `checkhealth.sh` prints an advisory for exactly that.
 
 ## Precautions
 
 - **Single-file config** — the sway config is one file; edit `config` and `swaymsg reload`
+- **Keyboard layout** — `config` sets `xkb_layout us` on every keyboard (`input "type:keyboard"`); nothing else is XKB-configured, so change it there for another layout
 - **Resize step** — `$resize_step` (default `20px`) controls both direct resize and the `Super+r` mode
 - **`$lock`** — swaylock options are inlined in `config` so keep the whole string on reload
 - **Window-rule case** — sway criteria are case-sensitive and split between `app_id`
