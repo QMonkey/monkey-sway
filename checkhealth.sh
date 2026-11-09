@@ -9,8 +9,8 @@ set -euo pipefail
 # ──────────────────────────────────────────────────────────────
 
 . "$(dirname "${BASH_SOURCE[0]:-$0}")/scripts/checkhealth.sh" || {
-	echo "monkey-scripts not found — update this checkout (git pull / re-clone)," >&2
-	echo "or run install.sh, which bootstraps monkey-scripts itself." >&2
+	printf '%s\n' "monkey-scripts not found — update this checkout (git pull / re-clone)," >&2
+	printf '%s\n' "or run install.sh, which bootstraps monkey-scripts itself." >&2
 	exit 1
 }
 
@@ -45,10 +45,10 @@ REQUIRED_CHECKS=(
 # "still missing" line each, anyofext semantics included) instead of
 # re-printing the whole section — REQUIRED_REPROBE_LIST with spec entries +
 # REQUIRED_MANUAL_HINT reproduce that via the shared install_missing_required
-# (monkey-scripts/lib/checks.sh). Package-name mapping lives in the shared
-# lib/pkg.sh table.
+# (monkey-scripts/lib/missing.sh). Package-name mapping lives in the shared
+# distro table (lib/distro.sh distro_name), asked through pkg_name (lib/pkg.sh).
 REQUIRED_REPROBE_LIST=("${REQUIRED_CHECKS[@]}")
-REQUIRED_MANUAL_HINT="Not in system repos — install manually: sway(COMBO), xdg-desktop-portal-wlr, xdg-desktop-portal-gtk, polkit-gnome, wezterm (https://wezterm.org/installation)"
+REQUIRED_MANUAL_HINT="Not in system repos — install manually: wezterm (https://wezterm.org/installation; Arch ships it in the official repo). The rest (sway, both portals, the polkit agent) are name-mapped in scripts/lib/distro.sh and do come from the distro repo."
 
 # ──────────────────────── recommended ────────────────────────
 RECOMMENDED_NOTE="(Missing won't block monkey-sway, but will degrade tray / brightness / tooling experience)"
@@ -69,8 +69,8 @@ ADVISORY_SECTIONS=(
 )
 
 # ──────────────────────── config ────────────────────────
-# src|dst|desc|mode|name|hint — mode "" accepts any existing symlink target
-# (sway's own semantics: whatever the link points at is reported, not judged).
+# src|dst|desc|mode|name|hint — mode "" accepts any existing symlink target:
+# whatever the link points at is reported, not judged.
 REPO_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 CONFIG_LINKS=(
 	"$REPO_DIR/config|$HOME/.config/sway/config|sway config|||sway config not found (run: ln -sf $REPO_DIR/config ~/.config/sway/config)"
