@@ -49,10 +49,10 @@ set $lock swaylock --color 2c2e34 --ring-color 363944 --inside-color 2c2e34 \
 # -----------------------------------------------------------------------------
 font pango:JetBrains Mono 12
 
-# Wallpaper: same picture as monkey-hyprland (sway spawns swaybg
-# automatically). "fill" scales and crops to cover each output.
-# The pictures/ directory is symlinked to ~/.config/sway by install.sh,
-# so the path below works regardless of where the repo is cloned.
+# Wallpaper: "fill" scales and crops to cover each output, and sway spawns
+# swaybg automatically for this line. The pictures/ directory is symlinked to
+# ~/.config/sway by install.sh, so the path below works regardless of where the
+# repo is cloned.
 output * bg ~/.config/sway/pictures/oskar-kadaksoo-ZqJ7zs0iT7w-unsplash.jpg fill
 
 # Borders / gaps
@@ -96,7 +96,9 @@ floating_modifier $mod
 # -----------------------------------------------------------------------------
 # Autostart
 # -----------------------------------------------------------------------------
-exec_always pgrep -x waybar || waybar &
+# The ~/.config/waybar default is compositor-neutral, so sway names its own bar
+# dir instead of taking it.
+exec_always pgrep -x waybar || waybar -c ~/.config/sway/waybar &
 exec_always pgrep -x mako || mako &
 exec_always pgrep -x polkit-gnome-authentication-agent-1 || /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
 exec_always pgrep -x xdg-desktop-portal-wlr || /usr/lib/xdg-desktop-portal-wlr &
