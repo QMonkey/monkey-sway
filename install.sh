@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ──────────────────────────────────────────────────────────────
 # monkey-sway one-shot installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/QMonkey/monkey-sway/master/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/QMonkey/monkey-sway/master/install.sh | bash 2>&1 | tee monkey-sway-install.log
 #
 # Installs sway + dependencies from the distro repo (sway by this file, the
 # rest via checkhealth.sh --install), clones this repo and links the configs,
@@ -98,16 +98,19 @@ fi
 LINUX_ONLY=1
 FINISH_INJECT=0 # no TIOCSTI injection hint at the end — the summary is the last output
 SUMMARY_LINES=(
-	"  Config: ${CYAN}$INSTALL_DIR${NC} → ${CYAN}~/.config/sway (+pictures) + ~/.config/waybar${NC}"
+	"  Config: ${CYAN}$INSTALL_DIR${NC} → ${CYAN}~/.config/sway (config + pictures + waybar/)${NC}"
 	"  Start sway from a TTY (never under sudo/root): ${CYAN}sway${NC}"
 	"  Update: ${CYAN}cd $INSTALL_DIR && git pull && swaymsg reload${NC}"
 )
 # No per-entry mode: the shared link_config (lib/config.sh) reports an existing
 # target and never re-creates a link under it, so plain SYMLINKS data suffices.
+# The bar links INSIDE ~/.config/sway, not at ~/.config/waybar: that default is
+# compositor-neutral, so whichever desktop config was installed last would
+# silently decide which bar config sway reads.
 SYMLINKS=(
 	"$INSTALL_DIR/config|$HOME/.config/sway/config"
 	"$INSTALL_DIR/pictures|$HOME/.config/sway/pictures"
-	"$INSTALL_DIR/waybar|$HOME/.config/waybar"
+	"$INSTALL_DIR/waybar|$HOME/.config/sway/waybar"
 )
 
 # ──────────────────────── project steps ────────────────────────
