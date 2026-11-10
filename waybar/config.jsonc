@@ -30,8 +30,10 @@
     "on-scroll-down": "swaymsg workspace prev",
     "all-outputs": false,
     "sort-by-number": true,
-    "active-only": false,
-    "persistent-workspaces": true
+    "active-only": false
+    // Persistent workspaces need "persistent-workspaces" as an OBJECT
+    // (workspace id => name, or "output:N" for one per monitor); the bool this
+    // block used to carry was never read, so it was silently inactive.
   },
   "clock": {
     "format": "{:%H:%M}",
