@@ -121,7 +121,7 @@ comment block at the top of `config`. Two ways to apply them:
 ```
 
 The report covers the required and recommended tools above, an advisory on Nerd Font presence and
-the two config links (`~/.config/sway/config`, `~/.config/waybar`). It exits 1 when any required
+the two config links (`~/.config/sway/config`, `~/.config/sway/waybar`). It exits 1 when any required
 tool is missing — also after `--install`, if something could not be installed; `install.sh` only
 warns in that case and carries on. When `install.sh` calls it, the config-link checks are skipped
 (`--skip-check-config`): that run happens before the links are created.
@@ -175,7 +175,7 @@ cd monkey-sway
 mkdir -p ~/.config/sway
 ln -sfn $(pwd)/config ~/.config/sway/config
 ln -sfn $(pwd)/pictures ~/.config/sway/pictures
-ln -sfn $(pwd)/waybar ~/.config/waybar
+ln -sfn $(pwd)/waybar ~/.config/sway/waybar
 ```
 
 Then start (or restart) sway. waybar, mako, swayidle, the polkit agent, both
