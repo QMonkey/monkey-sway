@@ -17,11 +17,22 @@ set -euo pipefail
 # ──────────────────────── identity ────────────────────────
 PROJECT=monkey-sway
 
+# ──────────────────────── version gate ────────────────────────
+# Floor 1.7, not a taste call: config line "client.focused_tab_title" first
+# appears in sway.5 at upstream tag 1.7 (absent from the 1.4/1.5/1.6 man
+# pages), so an older sway starts with the tab-title colors silently ignored.
+# sway IS in the distro repos, hence the pkg lane (unlike Hyprland, which
+# declares "none" and builds from source).
+MAIN_VERSION="sway|ver:1.7|sway (compositor)|pkg"
+MAIN_VERSION_TITLE="sway version"
+
 # ──────────────────────── required ────────────────────────
 REQUIRED_CHECKS=(
 	"@header|Required tools"
 	"@note|(compositor/bar/terminal/launcher/screenshot/portals/polkit/audio/idle/wallpaper/lock)"
-	"sway|bin|sway (compositor)"
+	# No "sway" entry: the version gate above is its presence check too
+	# (missing binary fails the gate), matching the other repos — zsh, nvim,
+	# wezterm and hyprland all leave the main tool to MAIN_VERSION.
 	"swaymsg|bin|swaymsg (ships with sway)"
 	"swaybg|bin|swaybg (wallpaper)"
 	"swayidle|bin|swayidle (idle management)"
@@ -74,7 +85,7 @@ ADVISORY_SECTIONS=(
 REPO_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 CONFIG_LINKS=(
 	"$REPO_DIR/config|$HOME/.config/sway/config|sway config|||sway config not found (run: ln -sf $REPO_DIR/config ~/.config/sway/config)"
-	"$REPO_DIR/waybar|$HOME/.config/waybar|waybar|||waybar config not found (run: ln -sfn $REPO_DIR/waybar ~/.config/waybar)"
+	"$REPO_DIR/waybar|$HOME/.config/sway/waybar|waybar|||waybar config not found (run: ln -sfn $REPO_DIR/waybar ~/.config/sway/waybar)"
 )
 
 checkhealth_main "$@"
