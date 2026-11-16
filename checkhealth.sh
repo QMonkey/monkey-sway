@@ -29,7 +29,7 @@ MAIN_VERSION_TITLE="sway version"
 # ──────────────────────── required ────────────────────────
 REQUIRED_CHECKS=(
 	"@header|Required tools"
-	"@note|(compositor/bar/terminal/launcher/screenshot/portals/polkit/audio/idle/wallpaper/lock)"
+	"@note|(compositor/bar/terminal/launcher/screenshot/portals/polkit/audio/idle/wallpaper/lock/CJK font)"
 	# No "sway" entry: the version gate above is its presence check too
 	# (missing binary fails the gate), matching the other repos — zsh, nvim,
 	# wezterm and hyprland all leave the main tool to MAIN_VERSION.
@@ -49,6 +49,10 @@ REQUIRED_CHECKS=(
 	"xdg-desktop-portal-wlr|anyofext:xdg-desktop-portal-wlr|xdg-desktop-portal-wlr (capture/sharing portal)"
 	"xdg-desktop-portal-gtk|anyofext:xdg-desktop-portal-gtk|xdg-desktop-portal-gtk (file-chooser portal)"
 	"polkit-gnome-authentication-agent-1|anyofext:polkit-gnome-authentication-agent-1|polkit-gnome (polkit auth agent)"
+	# fc:zh:Noto asks fontconfig for a Noto CJK family by name. Not "any Chinese
+	# font": a host rendering Chinese in WenQuanYi still gets Noto installed, because
+	# the shapes are the point. "cjkfont" is the sentinel in scripts/lib/distro.sh.
+	"cjkfont|fc:zh:Noto|CJK font (Noto CJK)"
 )
 
 # ──────────────────────── required install ────────────────────────
@@ -59,7 +63,7 @@ REQUIRED_CHECKS=(
 # (monkey-scripts/lib/missing.sh). Package-name mapping lives in the shared
 # distro table (lib/distro.sh distro_name), asked through pkg_name (lib/pkg.sh).
 REQUIRED_REPROBE_LIST=("${REQUIRED_CHECKS[@]}")
-REQUIRED_MANUAL_HINT="Not in system repos — install manually: wezterm (https://wezterm.org/installation; Arch ships it in the official repo). The rest (sway, both portals, the polkit agent) are name-mapped in scripts/lib/distro.sh and do come from the distro repo."
+REQUIRED_MANUAL_HINT="Not in system repos — install manually: wezterm (https://wezterm.org/installation; Arch ships it in the official repo). The rest (sway, both portals, the polkit agent, the CJK font) are name-mapped in scripts/lib/distro.sh and do come from the distro repo."
 
 # ──────────────────────── recommended ────────────────────────
 RECOMMENDED_NOTE="(Missing won't block monkey-sway, but will degrade tray / brightness / tooling experience)"
