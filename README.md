@@ -74,6 +74,7 @@ The project monkey-sway is a clean, fast and vim-flavored Wayland desktop config
 | xdg-desktop-portal-wlr                      | Screen capture / screen sharing portal backend                | Yes      |
 | xdg-desktop-portal-gtk                      | File chooser portal for GTK/Flatpak apps                      | Yes      |
 | polkit-gnome                                | Polkit authentication agent for GUI privilege prompts         | Yes      |
+| Noto CJK font                               | Chinese glyphs in Noto shapes (not just any CJK font)         | Yes      |
 
 #### Recommended tools
 
@@ -90,7 +91,7 @@ The project monkey-sway is a clean, fast and vim-flavored Wayland desktop config
 ```bash
 # Arch
 sudo pacman -S sway swaybg swayidle swaylock waybar bemenu grim slurp wl-clipboard \
-    wireplumber mako xdg-desktop-portal-wlr xdg-desktop-portal-gtk polkit-gnome \
+    wireplumber mako xdg-desktop-portal-wlr xdg-desktop-portal-gtk polkit-gnome noto-fonts-cjk \
     network-manager-applet brightnessctl pavucontrol nm-connection-editor gnome-calendar \
     wlsunset hyprpicker
 # wezterm: https://wezterm.org/installation (or: sudo pacman -S wezterm)
@@ -98,7 +99,7 @@ sudo pacman -S sway swaybg swayidle swaylock waybar bemenu grim slurp wl-clipboa
 # Debian (openSUSE/DNF analogous; package names may differ, e.g. policykit-1-gnome.
 # nm-connection-editor ships inside network-manager-gnome here, so it is not a name of its own.)
 sudo apt-get install sway swaybg swayidle swaylock waybar bemenu grim slurp wl-clipboard \
-    wireplumber mako-notifier xdg-desktop-portal-wlr xdg-desktop-portal-gtk policykit-1-gnome \
+    wireplumber mako-notifier xdg-desktop-portal-wlr xdg-desktop-portal-gtk policykit-1-gnome fonts-noto-cjk \
     network-manager-gnome brightnessctl pavucontrol gnome-calendar
 ```
 
